@@ -27,11 +27,19 @@ stages {
 post {
 
     success {
-        echo 'Build completed successfully'
+        slackSend(
+            channel: '#spark-alerts',
+            color: 'good',
+            message: "Build SUCCESSFUL: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        )
     }
 
     failure {
-        echo 'Build failed'
+        slackSend(
+            channel: '#spark-alerts',
+            color: 'danger',
+            message: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        )
     }
 
     always {
