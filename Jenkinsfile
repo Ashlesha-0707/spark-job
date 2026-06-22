@@ -1,73 +1,55 @@
 pipeline {
-agent any
+    agent any
 
-```
-stages {
+    stages {
+       
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image from the Dockerfile
+                    sh 'docker-compose build'
+                }
+            }
+        }
 
-    stage('Build Docker Image') {
-        steps {
-            script {
-                sh 'docker compose build'
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    // Run the container with docker-compose
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
+
+        stage('Run Spark Job') {
+            steps {
+                script {
+                    // Tail the logs of the Spark job to ensure it's running
+                    sh 'docker-compose logs -f'
+                }
             }
         }
     }
 
-    stage('Run Docker Containers') {
-        steps {
+    post {
+    	success {
             script {
-                sh 'docker compose up -d'
+                // Notify success to Slack
+                slackSend channel: '#spark-alerts', color: 'good', message: "Build SUCCESSFUL: ${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})"
             }
         }
-    }
-
-    stage('Verify Containers') {
-        steps {
+        failure {
             script {
-                sh 'docker compose ps'
-                sh 'docker compose logs --tail=50'
+                // Notify failure to Slack
+                slackSend channel: '#spark-alerts', color: 'danger', message: "Build FAILED: ${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})"
             }
         }
-    }
-
-    stage('Run Spark Job') {
-        steps {
+        always {
             script {
-                sh '''
-                    docker compose exec -T spark-master \
-                    spark-submit /opt/spark-apps/your_spark_job.py
-                '''
+                // Stop and remove containers after the job
+                sh 'docker-compose down'
             }
         }
     }
 }
-
-post {
-    success {
-        script {
-            slackSend(
-                channel: '#spark-alerts',
-                color: 'good',
-                message: "Build SUCCESSFUL: ${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})"
-            )
-        }
-    }
-
-    failure {
-        script {
-            slackSend(
-                channel: '#spark-alerts',
-                color: 'danger',
-                message: "Build FAILED: ${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})"
-            )
-        }
-    }
-
-    always {
-        script {
-            sh 'docker compose down'
-        }
-    }
-}
-```
-
-}
+Add your content here
