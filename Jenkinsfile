@@ -16,35 +16,22 @@ stages {
         }
     }
 
-    stage('Verify Containers') {
+    stage('Check Containers') {
         steps {
             sh 'docker compose ps'
             sh 'docker compose logs --tail=50'
         }
     }
-
 }
 
 post {
 
     success {
-        echo 'Pipeline completed successfully'
-
-        slackSend(
-            channel: '#spark-alerts',
-            color: 'good',
-            message: "Build SUCCESSFUL: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-        )
+        echo 'Build completed successfully'
     }
 
     failure {
-        echo 'Pipeline failed'
-
-        slackSend(
-            channel: '#spark-alerts',
-            color: 'danger',
-            message: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-        )
+        echo 'Build failed'
     }
 
     always {
